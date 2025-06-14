@@ -11,6 +11,10 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
 from pathlib import Path
+import multiprocessing
+
+# 创建日志队列
+LOG_QUEUE = multiprocessing.Queue(-1)  # 无限大小的队列
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -62,7 +66,8 @@ LOGGING = {
     'disable_existing_loggers': False,
     'formatters': {
         'verbose': {
-            'format': '{levelname} {asctime} {module} {message}',
+            #'format': '{levelname} {asctime} {module} [PID:{process}, TID:{thread}] {message}',
+            'format': '{message}',
             'style': '{',
         },
     },
@@ -70,17 +75,28 @@ LOGGING = {
         'celery_log': {
             'level': 'INFO',
             'formatter': 'verbose',
-            'class': 'myproject.logging_handlers.MinuteRotatingFileHandler',
-            'filename': '/Users/ian/Documents/ai_coding/django_celery_logging/logs/celery.log',
-            'when': 'M',  # 每分钟轮换一次
-            'interval': 1,
-            'backupCount': 10,
-            'encoding': 'utf-8',
+            'class': 'logging.handlers.QueueHandler',
+            'queue': LOG_QUEUE,
+        },
+        'console': {
+            'level': 'INFO',
+            'formatter': 'verbose',
+            'class': 'logging.StreamHandler',
         },
     },
     'loggers': {
+        '': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
         'myapp': {
             'handlers': ['celery_log'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'celery': {
+            'handlers': ['console'],
             'level': 'INFO',
             'propagate': False,
         },

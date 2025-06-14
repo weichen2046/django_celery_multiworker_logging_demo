@@ -6,6 +6,9 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'myproject.settings')
 
 app = Celery('myproject')
 
+# 禁用Celery劫持Django日志
+app.conf.worker_hijack_root_logger = False
+
 # 使用Django的设置文件配置Celery
 app.config_from_object('django.conf:settings', namespace='CELERY')
 
